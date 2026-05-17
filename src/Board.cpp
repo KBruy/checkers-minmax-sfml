@@ -68,7 +68,7 @@ bool Board::parsePosition(const std::string& position, int& row, int& col) const
     return true;
 }
 
-bool Board::movePiece(const std::string& from, const std::string& to) {
+bool Board::movePiece(const std::string& from, const std::string& to, char player) {
     int fromRow;
     int fromCol;
     int toRow;
@@ -88,6 +88,10 @@ bool Board::movePiece(const std::string& from, const std::string& to) {
         return false;
     }
 
+    if (!isPlayerPiece(piece, player)) {
+        return false;
+    }
+
     if (fields[toRow][toCol] != '.') {
         return false;
     }
@@ -95,11 +99,15 @@ bool Board::movePiece(const std::string& from, const std::string& to) {
     int rowDiff = toRow - fromRow;
     int colDiff = toCol - fromCol;
 
-    if (rowDiff < -1 || rowDiff > 1 || colDiff < -1 || colDiff > 1) {
+    if (colDiff != 1 && colDiff != -1) {
         return false;
     }
 
-    if (rowDiff == 0 || colDiff == 0) {
+    if (player == 'w' && rowDiff != -1) {
+        return false;
+    }
+
+    if (player == 'b' && rowDiff != 1) {
         return false;
     }
 
@@ -107,4 +115,16 @@ bool Board::movePiece(const std::string& from, const std::string& to) {
     fields[fromRow][fromCol] = '.';
 
     return true;
+}
+
+bool Board::isPlayerPiece(char piece, char player) const {
+    if (player == 'w') {
+        return piece == 'w';
+    }
+
+    if (player == 'b') {
+        return piece == 'b';
+    }
+
+    return false;
 }
