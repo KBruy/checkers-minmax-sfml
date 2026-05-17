@@ -1,14 +1,19 @@
 #ifndef BOARD_H
 #define BOARD_H
 
+#include <string>
+
 class Board {
-    private:
-        char fields[8][8];
+private:
+    char fields[8][8];
 
-    public:
-        Board();
+    bool parsePosition(const std::string& position, int& row, int& col) const;
 
-        void print() const;
+public:
+    Board();
+
+    void print() const;
+    bool movePiece(const std::string& from, const std::string& to);
 };
 
 #endif
