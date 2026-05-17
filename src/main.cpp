@@ -1,19 +1,10 @@
-#include <SFML/Graphics.hpp>
-#include <optional>
+#include "Board.h"
+
 
 int main() {
-    sf::RenderWindow window(sf::VideoMode({800, 800}), "Checkers - Min-Max");
+    Board board;
 
-    while (window.isOpen()) {
-        while (const std::optional event = window.pollEvent()) {
-            if (event->is<sf::Event::Closed>()) {
-                window.close();
-            }
-        }
-
-        window.clear(sf::Color::White);
-        window.display();
-    }
+    board.print();
 
     return 0;
 }
