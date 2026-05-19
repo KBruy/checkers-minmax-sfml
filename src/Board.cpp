@@ -239,7 +239,7 @@ bool Board::isPathClear(int fromRow, int fromCol, int toRow, int toCol) const {
 
 bool Board::findCapturePieceOnPath(int fromRow, int fromCol, int toRow, int toCol, char player, int& capturedRow, int& capturedCol) const {
     int rowStep = (toRow > fromRow) ? 1 : -1;
-    int colStep = (toCol > fromCol) ? : -1;
+    int colStep = (toCol > fromCol) ? 1 : -1;
 
     int row = fromRow + rowStep;
     int col = fromCol + colStep;
@@ -269,4 +269,208 @@ bool Board::findCapturePieceOnPath(int fromRow, int fromCol, int toRow, int toCo
     }
 
     return foundOpponent;
+}
+
+bool Board::canManCaptureFrom(int row, int col, char player) const {
+    char piece = fields[row][col];
+
+    if (!isPlayerPiece(piece, player) || isKing(piece)) {
+        return false;
+    }
+
+    int directions[4][2] = {
+        {-2, -2},
+        {-2, 2},
+        {2, -2},
+        {2, 2}
+    };
+
+    for (int i = 0; i < 4; i++) {
+        int targetRow = row + directions[i][0];
+        int targetCol = col + directions[i][1];
+
+        if (targetRow < 0 || targetRow >= 8 || targetCol < 0 || targetCol >= 8) {
+            continue;
+        }
+
+        if (fields[targetRow][targetCol] != '.') {
+            continue;
+        }
+
+        int middleRow = (row + targetRow) /2;
+        int middleCol = (col + targetCol) / 2;
+
+        if (isOpponentPiece(fields[middleRow][middleCol],player)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool Board::canKingCaptureFrom(int row, int col, char player) const {
+    char piece = fields[row][col];
+
+    if (!isPlayerPiece(piece, player) || !isKing(piece)) {
+        return false;
+    }
+
+    int directions[4][2] = {
+        {-1, -1}, {-1, 1}, {1, -1}, {1,1}
+    };
+
+    for (int i = 0; i<4; i++) {
+        bool foundOpponent = false;
+
+        int currentRow = row + directions[i][0];
+        int currentCol = col + directions[i][1];
+
+        while (currentRow >= 0 && currentRow < 8 &&
+             currentCol >= 0 && currentCol < 8) {
+
+              char current = fields[currentRow][currentCol];
+
+              if (current == '.') {
+                if (foundOpponent) {
+                    return true;
+                }
+              } else if (isPlayerPiece(current, player)) {
+                break;
+              } else if (isOpponentPiece(current, player)) {
+                if (foundOpponent) {
+                    break;
+                }
+
+                foundOpponent = true;
+
+              }
+
+              currentRow += directions[i][0];
+              currentCol += directions[i][1];
+                
+        }
+    }
+
+    return false;
+}
+
+bool Board::hasAnyCapture(char player) const {
+    for (int row = 0; row < 8; row++) {
+        for (int col = 0; col < 8; col++) {
+            char piece = fields[row][col];
+
+            if (!isPlayerPiece(piece, player)) {
+                continue;
+            }
+
+            if (isKing(piece)) {
+                if (canKingCaptureFrom(row, col, player)) {
+                    return true;
+                }
+            } else {
+                if (canManCaptureFrom(row, col, player)) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+
+}
+
+bool Board::isCaptureMove(const std::string& from, const std::string& to, char player) const {
+    int fromRow;
+    int fromCol;
+    int toRow;
+    int toCol;
+
+    if (!parsePosition(from, fromRow, fromCol)) {
+        return false;
+    }
+
+    if (!parsePosition(to, toRow, toCol)) {
+        return false;
+    }
+
+    char piece = fields[fromRow][fromCol];
+
+    if (!isPlayerPiece(piece, player)) {
+        return false;
+    }
+
+    if (fields[toRow][toCol] != '.') {
+        return false;
+    }
+
+    int rowDiff = toRow - fromRow;
+    int colDiff = toCol - fromCol;
+
+    int absRowDiff = rowDiff;
+    int absColDiff = colDiff;
+
+    if (absRowDiff < 0) {
+        absRowDiff = -absRowDiff;
+    }
+
+    if (absColDiff < 0) {
+        absColDiff = -absColDiff;
+    }
+
+    //bicie zwyklego pionka
+    if (!isKing(piece)) {
+        if (absRowDiff == 2 && absColDiff == 2) {
+            int middleRow = (fromRow + toRow) / 2;
+            int middleCol = (fromCol + toCol) / 2;
+
+            return isOpponentPiece(fields[middleRow][middleCol], player);
+    
+        }
+
+        return false;
+    }
+
+    //bicie damki z odleglosci
+
+    if (absRowDiff == absColDiff && absRowDiff > 0) {
+        int capturedRow = -1;
+        int capturedCol = -1;
+
+        return findCapturePieceOnPath(fromRow, fromCol, toRow, toCol, player, capturedRow, capturedCol);
+    }
+
+    return false;
+}
+
+bool Board::canCaptureFromPosition(const std::string& position, char player) const {
+    int row;
+    int col;
+
+    if (!parsePosition(position, row, col)) {
+        return false;
+    }
+
+    char piece = fields[row][col];
+
+    if (!isPlayerPiece(piece, player)) {
+        return false;
+    }
+
+    if (isKing(piece)) {
+        return canKingCaptureFrom(row, col, player);
+    }
+
+    return canManCaptureFrom(row, col, player);
+}
+
+bool Board::hasPieces(char player) const {
+    for (int row = 0; row < 8; row++) {
+        for (int col = 0; col < 8; col++) {
+            if (isPlayerPiece(fields[row][col], player)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
