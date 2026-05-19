@@ -17,12 +17,16 @@ private:
     //bicie damką na dystans
     bool findCapturePieceOnPath(int fromRow, int fromCol, int toRow, int toCol, char player, int& capturedRow, int& capturedCol) const;
 
+    bool canManCaptureFrom(int row, int col, char player) const;
+    bool canKingCaptureFrom(int row, int col, char player) const;
+
 
 public:
     Board();
 
     void print() const;
     bool movePiece(const std::string& from, const std::string& to, char player);
+    bool hasAnyCapture(char player) const;
 };
 
 #endif

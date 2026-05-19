@@ -20,6 +20,12 @@ int main() {
             std::cout << "Tura czarnych \n";
         }
 
+        if (board.hasAnyCapture(currentPlayer)) {
+            std::cout << "###############################\n";
+            std::cout << "    Dostępne jest bicie!\n";
+            std::cout << "###############################\n";
+        }
+
         std::cout << "Podaj ruch, np. c3 d4, albo q zeby wyjsc: ";
         std::cin >> from;
 
