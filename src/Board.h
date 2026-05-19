@@ -26,7 +26,8 @@ public:
 
     void print() const;
     bool movePiece(const std::string& from, const std::string& to, char player);
-    bool hasAnyCapture(char player) const;
+    bool hasAnyCapture(char player) const; //monitoring czy pojawia sie bicie
+    bool isCaptureMove(const std::string& from, const std::string& to, char player) const; // zwraca czy obecnie jest wymuszenie bicia
 };
 
 #endif

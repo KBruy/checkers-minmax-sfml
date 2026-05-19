@@ -15,15 +15,15 @@ int main() {
         board.print();
 
         if (currentPlayer == 'w') {
-            std::cout << "Tura białych \n";
+            std::cout << "Tura białych \n\n";
         } else {
-            std::cout << "Tura czarnych \n";
+            std::cout << "Tura czarnych \n\n";
         }
 
         if (board.hasAnyCapture(currentPlayer)) {
             std::cout << "###############################\n";
             std::cout << "    Dostępne jest bicie!\n";
-            std::cout << "###############################\n";
+            std::cout << "###############################\n\n";
         }
 
         std::cout << "Podaj ruch, np. c3 d4, albo q zeby wyjsc: ";
@@ -35,8 +35,16 @@ int main() {
 
         std::cin >> to;
 
+        bool mustCapture = board.hasAnyCapture(currentPlayer);
+        bool captureMove = board.isCaptureMove(from, to, currentPlayer);
+
+        if (mustCapture && !captureMove) {
+            std::cout << "Musisz wykonac bicie \n\n";
+            continue;
+        }
+
         if (board.movePiece(from, to, currentPlayer)) {
-            std::cout << "Ruch wykonany\n\n";
+            std::cout<<"Ruch wykonany \n\n";
 
             if (currentPlayer == 'w') {
                 currentPlayer = 'b';
@@ -47,6 +55,5 @@ int main() {
             std::cout << "Niepoprawny ruch \n\n";
         }
     }
-
     return 0;
 }

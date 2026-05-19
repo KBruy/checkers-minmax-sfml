@@ -376,5 +376,68 @@ bool Board::hasAnyCapture(char player) const {
     }
 
     return false;
+
+}
+
+bool Board::isCaptureMove(const std::string& from, const std::string& to, char player) const {
+    int fromRow;
+    int fromCol;
+    int toRow;
+    int toCol;
+
+    if (!parsePosition(from, fromRow, fromCol)) {
+        return false;
+    }
+
+    if (!parsePosition(to, toRow, toCol)) {
+        return false;
+    }
+
+    char piece = fields[fromRow][fromCol];
+
+    if (!isPlayerPiece(piece, player)) {
+        return false;
+    }
+
+    if (fields[toRow][toCol] != '.') {
+        return false;
+    }
+
+    int rowDiff = toRow - fromRow;
+    int colDiff = toCol - fromCol;
+
+    int absRowDiff = rowDiff;
+    int absColDiff = colDiff;
+
+    if (absRowDiff < 0) {
+        absRowDiff = -absRowDiff;
+    }
+
+    if (absColDiff < 0) {
+        absColDiff = -absColDiff;
+    }
+
+    //bicie zwyklego pionka
+    if (!isKing(piece)) {
+        if (absRowDiff == 2 && absColDiff == 2) {
+            int middleRow = (fromRow + toRow) / 2;
+            int middleCol = (fromCol + toCol) / 2;
+
+            return isOpponentPiece(fields[middleRow][middleCol], player);
     
+        }
+
+        return false;
+    }
+
+    //bicie damki z odleglosci
+
+    if (absRowDiff == absColDiff && absRowDiff > 0) {
+        int capturedRow = -1;
+        int capturedCol = -1;
+
+        return findCapturePieceOnPath(fromRow, fromCol, toRow, toCol, player, capturedRow, capturedCol);
+    }
+
+    return false;
 }
