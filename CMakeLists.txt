@@ -10,6 +10,7 @@ find_package(SFML 3 COMPONENTS Graphics Window System REQUIRED)
 add_executable(PAACheckersMinMax
     src/main.cpp
     src/Board.cpp
+    src/Move.cpp
 )
 
 target_link_libraries(PAACheckersMinMax
