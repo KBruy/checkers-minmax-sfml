@@ -8,8 +8,8 @@ private:
     char fields[8][8];
 
     bool parsePosition(const std::string& position, int& row, int& col) const;
-
     bool isPlayerPiece(char piece, char player) const;
+    bool isOpponentPiece(char piece, char player) const;
 
 public:
     Board();

@@ -99,22 +99,45 @@ bool Board::movePiece(const std::string& from, const std::string& to, char playe
     int rowDiff = toRow - fromRow;
     int colDiff = toCol - fromCol;
 
-    if (colDiff != 1 && colDiff != -1) {
-        return false;
+   //Zwykly ruch o jedno pole
+    if ((rowDiff == 1 || rowDiff == -1) && (colDiff == 1 || colDiff == -1)) {
+        if (player == 'w' && rowDiff != -1) {
+            return false;
+        }
+
+        if (player == 'b' && rowDiff != 1)  {
+            return false;
+        }
+
+        if (player == 'b' && rowDiff != 1) {
+            return false;
+        }
+
+        fields[toRow][toCol] = piece;
+        fields[fromRow][fromCol] = '.';
+
+        return true;
     }
 
-    if (player == 'w' && rowDiff != -1) {
-        return false;
+    // Bicie o dwa pola, do przodu albo do tyłu
+    if ((rowDiff == 2 || rowDiff == -2) && (colDiff == 2 || colDiff == -2)) {
+        int middleRow = (fromRow + toRow) / 2;
+        int middleCol = (fromCol + toCol) /2;
+
+        char middlePiece = fields[middleRow][middleCol];
+
+        if (!isOpponentPiece(middlePiece, player)) {
+            return false;
+        }
+
+        fields[toRow][toCol] = piece;
+        fields[fromRow][fromCol] = '.';
+        fields[middleRow][middleCol] = '.';
+
+        return true;
     }
 
-    if (player == 'b' && rowDiff != 1) {
-        return false;
-    }
-
-    fields[toRow][toCol] = piece;
-    fields[fromRow][fromCol] = '.';
-
-    return true;
+    return false;
 }
 
 bool Board::isPlayerPiece(char piece, char player) const {
@@ -127,4 +150,17 @@ bool Board::isPlayerPiece(char piece, char player) const {
     }
 
     return false;
+}
+
+bool Board::isOpponentPiece(char piece, char player) const{
+    if (player == 'w') {
+        return piece == 'b';
+    }
+
+    if (player == 'b') {
+        return piece == 'w';
+    }
+
+    return false;
+
 }
