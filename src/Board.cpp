@@ -441,3 +441,24 @@ bool Board::isCaptureMove(const std::string& from, const std::string& to, char p
 
     return false;
 }
+
+bool Board::canCaptureFromPosition(const std::string& position, char player) const {
+    int row;
+    int col;
+
+    if (!parsePosition(position, row, col)) {
+        return false;
+    }
+
+    char piece = fields[row][col];
+
+    if (!isPlayerPiece(piece, player)) {
+        return false;
+    }
+
+    if (isKing(piece)) {
+        return canKingCaptureFrom(row, col, player);
+    }
+
+    return canManCaptureFrom(row, col, player);
+}
