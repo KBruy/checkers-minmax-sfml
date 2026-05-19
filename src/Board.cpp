@@ -99,13 +99,34 @@ bool Board::movePiece(const std::string& from, const std::string& to, char playe
     int rowDiff = toRow - fromRow;
     int colDiff = toCol - fromCol;
 
-   //Zwykly ruch o jedno pole
-    if ((rowDiff == 1 || rowDiff == -1) && (colDiff == 1 || colDiff == -1)) {
-        if (player == 'w' && rowDiff != -1) {
-            return false;
+    // Ruch damki po przekatnej o dowolna liczbe pustych pol
+    if (isKing(piece)) {
+        int absRowDiff = rowDiff;
+        int absColDiff = colDiff;
+
+        if (absRowDiff < 0) {
+            absRowDiff = -absRowDiff;
         }
 
-        if (player == 'b' && rowDiff != 1)  {
+        if (absColDiff < 0) {
+            absColDiff = -absColDiff;
+        }
+
+        if (absRowDiff == absColDiff && absRowDiff > 0) {
+            if (!isPathClear(fromRow, fromCol, toRow, toCol)) {
+                return false;
+            }
+
+            fields[toRow][toCol] = piece;
+            fields[fromRow][fromCol] = '.';
+
+            return true;
+        }
+    }
+
+    // Zwykly ruch pionka o jedno pole
+    if ((rowDiff == 1 || rowDiff == -1) && (colDiff == 1 || colDiff == -1)) {
+        if (player == 'w' && rowDiff != -1) {
             return false;
         }
 
@@ -116,13 +137,15 @@ bool Board::movePiece(const std::string& from, const std::string& to, char playe
         fields[toRow][toCol] = piece;
         fields[fromRow][fromCol] = '.';
 
+        promoteIfNeeded(toRow, toCol);
+
         return true;
     }
 
-    // Bicie o dwa pola, do przodu albo do tyłu
+    // Bicie pionka o dwa pola, do przodu albo do tylu
     if ((rowDiff == 2 || rowDiff == -2) && (colDiff == 2 || colDiff == -2)) {
         int middleRow = (fromRow + toRow) / 2;
-        int middleCol = (fromCol + toCol) /2;
+        int middleCol = (fromCol + toCol) / 2;
 
         char middlePiece = fields[middleRow][middleCol];
 
@@ -134,6 +157,8 @@ bool Board::movePiece(const std::string& from, const std::string& to, char playe
         fields[fromRow][fromCol] = '.';
         fields[middleRow][middleCol] = '.';
 
+        promoteIfNeeded(toRow, toCol);
+
         return true;
     }
 
@@ -142,25 +167,57 @@ bool Board::movePiece(const std::string& from, const std::string& to, char playe
 
 bool Board::isPlayerPiece(char piece, char player) const {
     if (player == 'w') {
-        return piece == 'w';
+        return piece == 'w' || piece == 'W';
     }
 
     if (player == 'b') {
-        return piece == 'b';
+        return piece == 'b' || piece == 'B';
     }
 
     return false;
 }
 
-bool Board::isOpponentPiece(char piece, char player) const{
+bool Board::isOpponentPiece(char piece, char player) const {
     if (player == 'w') {
-        return piece == 'b';
+        return piece == 'b' || piece == 'B';
     }
 
     if (player == 'b') {
-        return piece == 'w';
+        return piece == 'w' || piece == 'W';
     }
 
     return false;
+}
 
+bool Board::isKing(char piece) const {
+    return piece == 'W' || piece == 'B';
+}
+
+void Board::promoteIfNeeded(int row, int col) {
+    if (fields[row][col] == 'w' && row == 0) {
+        fields[row][col] = 'W';
+    }
+
+    if (fields[row][col] == 'b' && row == 7) {
+        fields[row][col] = 'B';
+    }
+}
+
+bool Board::isPathClear(int fromRow, int fromCol, int toRow, int toCol) const {
+    int rowStep = (toRow > fromRow) ? 1 : -1;
+    int colStep = (toCol > fromCol) ? 1 : -1;
+
+    int row = fromRow + rowStep;
+    int col = fromCol + colStep;
+
+    while (row != toRow && col != toCol) {
+        if (fields[row][col] != '.') {
+            return false;
+        }
+
+        row += rowStep;
+        col += colStep;
+    }
+
+    return true;
 }

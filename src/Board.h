@@ -11,6 +11,10 @@ private:
     bool isPlayerPiece(char piece, char player) const;
     bool isOpponentPiece(char piece, char player) const;
 
+    void promoteIfNeeded(int row, int col);
+    bool isKing(char piece) const;
+    bool isPathClear(int fromRow, int fromCol, int toRow, int toCol) const;
+
 public:
     Board();
 
