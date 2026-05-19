@@ -14,6 +14,9 @@ private:
     void promoteIfNeeded(int row, int col);
     bool isKing(char piece) const;
     bool isPathClear(int fromRow, int fromCol, int toRow, int toCol) const;
+    //bicie damką na dystans
+    bool findCapturePieceOnPath(int fromRow, int fromCol, int toRow, int toCol, char player, int& capturedRow, int& capturedCol) const;
+
 
 public:
     Board();

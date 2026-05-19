@@ -99,29 +99,44 @@ bool Board::movePiece(const std::string& from, const std::string& to, char playe
     int rowDiff = toRow - fromRow;
     int colDiff = toCol - fromCol;
 
-    // Ruch damki po przekatnej o dowolna liczbe pustych pol
+    int absRowDiff = rowDiff;
+    int absColDiff = colDiff;
+
+    if (absRowDiff < 0) {
+        absRowDiff = -absRowDiff;
+    }
+
+    if (absColDiff < 0) {
+        absColDiff = -absColDiff;
+    }
+
+    // Ruch albo bicie damki po przekatnej
     if (isKing(piece)) {
-        int absRowDiff = rowDiff;
-        int absColDiff = colDiff;
-
-        if (absRowDiff < 0) {
-            absRowDiff = -absRowDiff;
+        if (absRowDiff != absColDiff || absRowDiff == 0) {
+            return false;
         }
 
-        if (absColDiff < 0) {
-            absColDiff = -absColDiff;
-        }
-
-        if (absRowDiff == absColDiff && absRowDiff > 0) {
-            if (!isPathClear(fromRow, fromCol, toRow, toCol)) {
-                return false;
-            }
-
+        // Zwykly ruch damki po pustej przekatnej
+        if (isPathClear(fromRow, fromCol, toRow, toCol)) {
             fields[toRow][toCol] = piece;
             fields[fromRow][fromCol] = '.';
 
             return true;
         }
+
+        // Bicie damki z odleglosci
+        int capturedRow = -1;
+        int capturedCol = -1;
+
+        if (findCapturePieceOnPath(fromRow, fromCol, toRow, toCol, player, capturedRow, capturedCol)) {
+            fields[toRow][toCol] = piece;
+            fields[fromRow][fromCol] = '.';
+            fields[capturedRow][capturedCol] = '.';
+
+            return true;
+        }
+
+        return false;
     }
 
     // Zwykly ruch pionka o jedno pole
@@ -220,4 +235,38 @@ bool Board::isPathClear(int fromRow, int fromCol, int toRow, int toCol) const {
     }
 
     return true;
+}
+
+bool Board::findCapturePieceOnPath(int fromRow, int fromCol, int toRow, int toCol, char player, int& capturedRow, int& capturedCol) const {
+    int rowStep = (toRow > fromRow) ? 1 : -1;
+    int colStep = (toCol > fromCol) ? : -1;
+
+    int row = fromRow + rowStep;
+    int col = fromCol + colStep;
+
+    bool foundOpponent = false;
+
+    while (row != toRow && col != toCol) {
+        char current = fields[row][col];
+
+        if (current != '.') {
+            if (isPlayerPiece(current, player)) {
+                return false;
+            }
+            if (isOpponentPiece(current, player)) {
+                if (foundOpponent) {
+                    return false;
+                }
+
+                foundOpponent = true;
+                capturedRow = row;
+                capturedCol = col;
+            }
+        }
+
+        row += rowStep;
+        col += colStep;
+    }
+
+    return foundOpponent;
 }
