@@ -1,18 +1,45 @@
-#include <SFML/Graphics.hpp>
-#include <optional>
+#include "Board.h"
+
+#include <iostream>
+#include <string>
+
 
 int main() {
-    sf::RenderWindow window(sf::VideoMode({800, 800}), "Checkers - Min-Max");
+    Board board;
+    char currentPlayer = 'w';
 
-    while (window.isOpen()) {
-        while (const std::optional event = window.pollEvent()) {
-            if (event->is<sf::Event::Closed>()) {
-                window.close();
-            }
+    std::string from;
+    std::string to;
+
+    while (true) {
+        board.print();
+
+        if (currentPlayer == 'w') {
+            std::cout << "Tura białych \n";
+        } else {
+            std::cout << "Tura czarnych \n";
         }
 
-        window.clear(sf::Color::White);
-        window.display();
+        std::cout << "Podaj ruch, np. c3 d4, albo q zeby wyjsc: ";
+        std::cin >> from;
+
+        if (from == "q") {
+            break;
+        }
+
+        std::cin >> to;
+
+        if (board.movePiece(from, to, currentPlayer)) {
+            std::cout << "Ruch wykonany\n\n";
+
+            if (currentPlayer == 'w') {
+                currentPlayer = 'b';
+            } else {
+                currentPlayer = 'w';
+            }
+        } else {
+            std::cout << "Niepoprawny ruch \n\n";
+        }
     }
 
     return 0;
