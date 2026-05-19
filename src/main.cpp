@@ -14,6 +14,20 @@ int main() {
     while (true) {
         board.print();
 
+        if (!board.hasPieces('w')) {
+        std::cout << "******************************\n";
+        std::cout << "       Czarne wygraly.\n";
+        std::cout << "******************************\n\n";
+        break;
+        }
+
+        if (!board.hasPieces('b')) {
+        std::cout << "******************************\n";
+        std::cout << "       Biale wygraly.\n";
+        std::cout << "******************************\n\n";
+        break;
+        }
+
         if (currentPlayer == 'w') {
             std::cout << "Tura bialych.\n";
         } else {

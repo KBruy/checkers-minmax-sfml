@@ -29,6 +29,9 @@ public:
     bool hasAnyCapture(char player) const; //monitoring czy pojawia sie bicie
     bool isCaptureMove(const std::string& from, const std::string& to, char player) const; // zwraca czy obecnie jest wymuszenie bicia
     bool canCaptureFromPosition(const std::string& position, char player) const; //wielokrotne bicie
+
+    bool hasPieces(char player) const; //monitor czy gra sie skonczyla (gracz ma pionki)
+    
 };
 
 #endif

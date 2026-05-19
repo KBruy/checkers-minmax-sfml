@@ -462,3 +462,15 @@ bool Board::canCaptureFromPosition(const std::string& position, char player) con
 
     return canManCaptureFrom(row, col, player);
 }
+
+bool Board::hasPieces(char player) const {
+    for (int row = 0; row < 8; row++) {
+        for (int col = 0; col < 8; col++) {
+            if (isPlayerPiece(fields[row][col], player)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
