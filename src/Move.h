@@ -6,9 +6,10 @@ struct Move {
     int fromCol;
     int toRow;
     int toCol;
+    bool isCapture;
 
     Move();
-    Move(int fromRow, int fromCol, int toRow, int toCol);
+    Move(int fromRow, int fromCol, int toRow, int toCol, bool isCapture);
 };
 
 #endif

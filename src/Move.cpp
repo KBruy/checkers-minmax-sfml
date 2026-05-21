@@ -1,15 +1,17 @@
 #include "Move.h"
 
 Move::Move() {
-    this->fromRow = 0;
-    this->fromCol = 0;
-    this->toRow = 0;
-    this->toCol = 0;
+    fromRow = 0;
+    fromCol = 0;
+    toRow = 0;
+    toCol = 0;
+    isCapture = false;
 }
 
-Move::Move(int fromRow, int fromCol, int toRow, int toCol) {
+Move::Move(int fromRow, int fromCol, int toRow, int toCol, bool isCapture) {
     this->fromRow = fromRow;
     this->fromCol = fromCol;
     this->toRow = toRow;
     this->toCol = toCol;
+    this->isCapture = isCapture;
 }
