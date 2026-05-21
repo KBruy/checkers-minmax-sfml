@@ -478,103 +478,63 @@ bool Board::hasPieces(char player) const {
     return false;
 }
 
-void Board::generateManMoves(int row, int col,
-                             char player,
-                             bool onlyCaptures,
-                             std::vector<Move>& moves) const {
-    if (!onlyCaptures) {
-        int forward = (player == 'w') ? -1 : 1;
+void Board::generateManMoves(int row, int col, char player, bool onlyCaptures, std::vector<Move>& moves) const {
+    if (onlyCaptures) {
+        Move startMove;
+        startMove.rows.push_back(row);
+        startMove.cols.push_back(col);
+        startMove.isCapture = true;
 
-        int moveDirections[2][2] = {
-            {forward, -1},
-            {forward, 1}
-        };
-
-        for (int i = 0; i < 2; i++) {
-            int targetRow = row + moveDirections[i][0];
-            int targetCol = col + moveDirections[i][1];
-
-            if (targetRow >= 0 && targetRow < 8 &&
-                targetCol >= 0 && targetCol < 8 &&
-                fields[targetRow][targetCol] == '.') {
-                moves.push_back(Move(row, col, targetRow, targetCol, false));
-            }
-        }
+        generateManCaptureSequences(*this, row, col, player, startMove, moves);
+        return;
     }
 
-    int captureDirections[4][2] = {
-        {-2, -2},
-        {-2, 2},
-        {2, -2},
-        {2, 2}
-    };
+    int forward = (player == 'w') ? -1 : 1;
 
-    for (int i = 0; i < 4; i++) {
-        int targetRow = row + captureDirections[i][0];
-        int targetCol = col + captureDirections[i][1];
+    int moveDirections[2][2] = {{forward, -1}, {forward, 1}};
 
-        if (targetRow < 0 || targetRow >= 8 ||
-            targetCol < 0 || targetCol >= 8) {
-            continue;
-        }
+    for (int i = 0; i<2; i++) {
+        int targetRow = row + moveDirections[i][0];
+        int targetCol = col + moveDirections[i][1];
 
-        if (fields[targetRow][targetCol] != '.') {
-            continue;
-        }
-
-        int middleRow = (row + targetRow) / 2;
-        int middleCol = (col + targetCol) / 2;
-
-        if (isOpponentPiece(fields[middleRow][middleCol], player)) {
-            moves.push_back(Move(row, col, targetRow, targetCol, true));
+        if (targetRow >= 0 && targetRow < 8 && targetCol >= 0 && targetCol < 8 && fields[targetRow][targetCol] == '.'){
+            moves.push_back(Move(row, col, targetRow, targetCol, false));
         }
     }
 }
 
-void Board::generateKingMoves(int row, int col,
-                              char player,
-                              bool onlyCaptures,
-                              std::vector<Move>& moves) const {
+void Board::generateKingMoves(int row, int col, char player, bool onlyCaptures, std::vector<Move>& moves) const {
+    if (onlyCaptures) {
+        Move startMove;
+        startMove.rows.push_back(row);
+        startMove.cols.push_back(col);
+        startMove.isCapture = true;
+
+        generateKingCaptureSequences(*this, row, col, player, startMove, moves);
+        return;
+    }
+
     int directions[4][2] = {
-        {-1, -1},
-        {-1, 1},
-        {1, -1},
-        {1, 1}
+        {-1, -1}, {-1,1}, {1,-1},{1,1}
     };
 
-    for (int i = 0; i < 4; i++) {
-        bool foundOpponent = false;
-
+    for (int i = 0; i<4; i++) {
         int currentRow = row + directions[i][0];
         int currentCol = col + directions[i][1];
 
-        while (currentRow >= 0 && currentRow < 8 &&
-               currentCol >= 0 && currentCol < 8) {
-            char current = fields[currentRow][currentCol];
-
-            if (current == '.') {
-                if (!onlyCaptures && !foundOpponent) {
-                    moves.push_back(Move(row, col, currentRow, currentCol, false));
-                }
-
-                if (foundOpponent) {
-                    moves.push_back(Move(row, col, currentRow, currentCol, true));
-                }
-            } else if (isPlayerPiece(current, player)) {
+        while (currentRow >= 0 && currentRow < 8 && currentCol >= 0 && currentCol < 8) {
+            if (fields[currentRow][currentCol] != '.') {
                 break;
-            } else if (isOpponentPiece(current, player)) {
-                if (foundOpponent) {
-                    break;
-                }
-
-                foundOpponent = true;
             }
+
+            moves.push_back(Move(row, col, currentRow, currentCol, false));
 
             currentRow += directions[i][0];
             currentCol += directions[i][1];
         }
     }
 }
+
 //metoda pod AI, zakladamy ze Move pochodzi z generateMoves(player) a wiec jest juz legalny
 std::vector<Move> Board::generateMoves(char player) const {
     std::vector<Move> moves;
@@ -600,52 +560,48 @@ std::vector<Move> Board::generateMoves(char player) const {
 }
 
 void Board::applyMove(const Move& move) {
-    char piece = fields[move.fromRow][move.fromCol];
-
-    fields[move.toRow][move.toCol] = piece;
-    fields[move.fromRow][move.fromCol] = '.';
-
-    if (move.isCapture) {
-        int rowDiff = move.toRow - move.fromRow;
-        int colDiff = move.toCol - move.fromCol;
-
-        int absRowDiff = rowDiff;
-        int absColDiff = colDiff;
-
-        if (absRowDiff < 0) {
-            absRowDiff =-absRowDiff;
-        }
-        if (absColDiff < 0) {
-            absColDiff = -absColDiff;
-        }
-
-        //Bicie zwyklego pionka
-        if (!isKing(piece)) {
-            int middleRow = (move.fromRow + move.toRow) /2;
-            int middleCol = (move.fromCol + move.toCol) /2;
-
-            fields[middleRow][middleCol] = '.';
-        } else {
-            //bicie damka z dystansu
-            int rowStep = (move.toRow > move.fromRow) ? 1 : -1;
-            int colStep = (move.toCol > move.fromCol) ? 1 : -1;
-
-            int row = move.fromRow + rowStep;
-            int col = move.fromCol + colStep;
-
-            while (row != move.toRow && col != move.toCol) {
-                if (fields[row][col] != '.') {
-                    fields[row][col] = '.';
-                    break;
-               }
-
-               row += rowStep;
-               col += colStep;
-            }
-        }
+    if (move.rows.size() < 2) {
+        return;
     }
 
-    promoteIfNeeded(move.toRow, move.toCol);
+    for (int i = 0; i < static_cast<int>(move.rows.size()) - 1; i++) {
+        int fromRow = move.rows[i];
+        int fromCol = move.cols[i];
+        int toRow = move.rows[i + 1];
+        int toCol = move.cols[i + 1];
+
+        char piece = fields[fromRow][fromCol];
+
+        fields[toRow][toCol] = piece;
+        fields[fromRow][fromCol] = '.';
+
+        if (move.isCapture) {
+            if (!isKing(piece)) {
+                int middleRow = (fromRow + toRow) / 2;
+                int middleCol = (fromCol + toCol) / 2;
+
+                fields[middleRow][middleCol] = '.';
+            } else {
+                int rowStep = (toRow > fromRow) ? 1 : -1;
+                int colStep = (toCol > fromCol) ? 1 : -1;
+
+                int row = fromRow + rowStep;
+                int col = fromCol + colStep;
+
+                while (row != toRow && col != toCol) {
+                    if (fields[row][col] != '.') {
+                        fields[row][col] = '.';
+                        break;
+                    }
+
+                    row += rowStep;
+                    col += colStep;
+                }
+            }
+        }
+
+        promoteIfNeeded(toRow, toCol);
+    }
 }
 
 int Board::evaluate(char player) const {
@@ -677,4 +633,110 @@ int Board::evaluate(char player) const {
     }
 
     return 0;
+}
+
+
+void Board::generateManCaptureSequences(Board board, int row, int col, char player, Move currentMove, std::vector<Move>& moves) const{
+    
+    bool foundNextCapture = false;
+
+    int directions[4][2] = {
+        {-2, -2},{-2,2},{2,-2},{2,2}
+    };
+
+    for (int i =0; i<4; i++) {
+        int targetRow = row + directions[i][0];
+        int targetCol = col + directions[i][1];
+
+        if (targetRow < 0 || targetRow >= 8 || targetCol < 0 || targetCol >= 8) {
+            continue;
+        }
+
+        if (board.fields[targetRow][targetCol] != '.') {
+            continue;
+        }
+
+        int middleRow = (row + targetRow) / 2;
+        int middleCol = (col + targetCol) / 2;
+
+        if (!board.isOpponentPiece(board.fields[middleRow][middleCol], player)) {
+            continue;
+        }
+
+        Board nextBoard = board;
+
+        char piece = nextBoard.fields[row][col];
+        nextBoard.fields[targetRow][targetCol] = piece;
+        nextBoard.fields[row][col] = '.';
+        nextBoard.fields[middleRow][middleCol] = '.';
+        nextBoard.promoteIfNeeded(targetRow, targetCol);
+
+        Move nextMove = currentMove;
+        nextMove.addStep(targetRow, targetCol);
+
+        nextBoard.generateManCaptureSequences(nextBoard, targetRow, targetCol, player, nextMove, moves);
+
+        foundNextCapture = true;
+    }
+
+    if (!foundNextCapture && currentMove.rows.size() > 1) {
+        moves.push_back(currentMove);
+    }
+}
+
+void Board::generateKingCaptureSequences(Board board, int row, int col, char player, Move currentMove, std::vector<Move>& moves) const{
+
+    bool foundNextCapture = false;
+
+    int directions[4][2] = {
+        {-1, -1}, {-1,1}, {1,-1}, {1,1}
+    };
+
+    for (int i =0; i < 4; i++) {
+        bool foundOpponent = false;
+        int capturedRow = -1;
+        int capturedCol = -1;
+
+        int currentRow = row + directions[i][0];
+        int currentCol = col + directions[i][1];
+
+        while (currentRow >= 0 && currentRow < 8 && currentCol >= 0 && currentCol <8) {
+            char current = board.fields[currentRow][currentCol];
+
+            if (current == '.') {
+                if (foundOpponent) {
+                    Board nextBoard = board;
+
+                    char piece = nextBoard.fields[row][col];
+                    nextBoard.fields[currentRow][currentCol] = piece;
+                    nextBoard.fields[row][col] = '.';
+                    nextBoard.fields[capturedRow][capturedCol] = '.';
+
+                    Move nextMove = currentMove;
+                    nextMove.addStep(currentRow, currentCol);
+
+                    nextBoard.generateKingCaptureSequences(nextBoard, currentRow, currentCol, player, nextMove, moves);
+
+                    foundNextCapture = true;
+                }
+
+            } else if (board.isPlayerPiece(current, player)) {
+                break;
+            } else if (board.isOpponentPiece(current, player)) {
+                if (foundOpponent) {
+                    break;
+                }
+                foundOpponent = true;
+                capturedRow = currentRow;
+                capturedCol = currentCol;
+            }
+
+            currentRow += directions[i][0];
+            currentCol += directions[i][1];
+        }
+    }
+
+    if (!foundNextCapture && currentMove.rows.size() > 1) {
+        moves.push_back(currentMove);
+    }
 }

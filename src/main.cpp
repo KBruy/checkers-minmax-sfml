@@ -49,8 +49,30 @@ int main() {
 
         std::vector<Move> legalMoves = board.generateMoves(currentPlayer);
 
+        int captureCount = 0;
+        int longestCaptureSteps = 0;
+
+        for (int i = 0; i < static_cast<int>(legalMoves.size()); i++) {
+            if (legalMoves[i].isCapture) {
+                captureCount++;
+
+                int steps = static_cast<int>(legalMoves[i].rows.size()) - 1;
+
+                if (steps > longestCaptureSteps) {
+                    longestCaptureSteps = steps;
+                }
+            }
+        }
+
         std::cout << "-------------------------------\n";
         std::cout << "Liczba legalnych ruchow: " << legalMoves.size() << '\n';
+        std::cout << "Liczba bic wsrod legalnych ruchow: " << captureCount << '\n';
+
+        if (captureCount > 0) {
+            std::cout << "Najdluzsza sekwencja bicia: "
+                      << longestCaptureSteps << " ruch/y\n";
+        }
+
         std::cout << "Ocena dla bialych: " << board.evaluate('w') << "\n";
         std::cout << "Ocena dla czarnych: " << board.evaluate('b') << "\n";
         std::cout << "-------------------------------\n\n";

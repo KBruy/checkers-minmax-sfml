@@ -38,6 +38,10 @@ private:
                            bool onlyCaptures,
                            std::vector<Move>& moves) const;
 
+
+    void generateManCaptureSequences(Board board, int row, int col, char player, Move currentMove, std::vector<Move>& moves) const;
+    void generateKingCaptureSequences(Board board, int row, int col, char player, Move currentMove, std::vector<Move>& moves) const;
+
 public:
     Board();
 
