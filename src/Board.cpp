@@ -647,3 +647,34 @@ void Board::applyMove(const Move& move) {
 
     promoteIfNeeded(move.toRow, move.toCol);
 }
+
+int Board::evaluate(char player) const {
+    int whiteScore = 0;
+    int blackScore = 0;
+
+    for (int row = 0; row < 8; row++) {
+        for (int col = 0; col < 8; col++) {
+            char piece = fields[row][col];
+
+            if (piece == 'w') {
+                whiteScore += 100;
+            } else if (piece == 'W') {
+                whiteScore += 300;
+            } else if (piece == 'b') {
+                blackScore += 100;
+            } else if (piece == 'B') {
+                blackScore += 300;
+            }
+        }
+    }
+
+    if (player == 'w') {
+        return whiteScore - blackScore;
+    }
+
+    if (player == 'b') {
+        return blackScore - whiteScore;
+    }
+
+    return 0;
+}

@@ -56,6 +56,9 @@ public:
     // Metoda pod automatyzacje ruchow i min-max
     std::vector<Move> generateMoves(char player) const;
     void applyMove(const Move& move);
+
+    //ocena planszy
+    int evaluate(char player) const;
 };
 
 #endif

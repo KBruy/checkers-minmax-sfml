@@ -51,6 +51,8 @@ int main() {
 
         std::cout << "-------------------------------\n";
         std::cout << "Liczba legalnych ruchow: " << legalMoves.size() << '\n';
+        std::cout << "Ocena dla bialych: " << board.evaluate('w') << "\n";
+        std::cout << "Ocena dla czarnych: " << board.evaluate('b') << "\n";
         std::cout << "-------------------------------\n\n";
 
         std::cout << "Podaj ruch, np. c3 d4 albo q zeby wyjsc: ";
