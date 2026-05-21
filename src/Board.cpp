@@ -575,7 +575,7 @@ void Board::generateKingMoves(int row, int col,
         }
     }
 }
-
+//metoda pod AI, zakladamy ze Move pochodzi z generateMoves(player) a wiec jest juz legalny
 std::vector<Move> Board::generateMoves(char player) const {
     std::vector<Move> moves;
     bool onlyCaptures = hasAnyCapture(player);
@@ -597,4 +597,53 @@ std::vector<Move> Board::generateMoves(char player) const {
     }
 
     return moves;
+}
+
+void Board::applyMove(const Move& move) {
+    char piece = fields[move.fromRow][move.fromCol];
+
+    fields[move.toRow][move.toCol] = piece;
+    fields[move.fromRow][move.fromCol] = '.';
+
+    if (move.isCapture) {
+        int rowDiff = move.toRow - move.fromRow;
+        int colDiff = move.toCol - move.fromCol;
+
+        int absRowDiff = rowDiff;
+        int absColDiff = colDiff;
+
+        if (absRowDiff < 0) {
+            absRowDiff =-absRowDiff;
+        }
+        if (absColDiff < 0) {
+            absColDiff = -absColDiff;
+        }
+
+        //Bicie zwyklego pionka
+        if (!isKing(piece)) {
+            int middleRow = (move.fromRow + move.toRow) /2;
+            int middleCol = (move.fromCol + move.toCol) /2;
+
+            fields[middleRow][middleCol] = '.';
+        } else {
+            //bicie damka z dystansu
+            int rowStep = (move.toRow > move.fromRow) ? 1 : -1;
+            int colStep = (move.toCol > move.fromCol) ? 1 : -1;
+
+            int row = move.fromRow + rowStep;
+            int col = move.fromCol + colStep;
+
+            while (row != move.toRow && col != move.toCol) {
+                if (fields[row][col] != '.') {
+                    fields[row][col] = '.';
+                    break;
+               }
+
+               row += rowStep;
+               col += colStep;
+            }
+        }
+    }
+
+    promoteIfNeeded(move.toRow, move.toCol);
 }

@@ -55,6 +55,7 @@ public:
 
     // Metoda pod automatyzacje ruchow i min-max
     std::vector<Move> generateMoves(char player) const;
+    void applyMove(const Move& move);
 };
 
 #endif
