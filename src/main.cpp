@@ -1,12 +1,40 @@
+#include "AI.h"
 #include "Board.h"
 #include "Move.h"
 
+#include <chrono>
 #include <iostream>
 #include <string>
+#include <thread>
 #include <vector>
+
+std::string positionToText(int row, int col) {
+    char file = 'a' + col;
+    char rank = '8' - row;
+
+    std::string position = "";
+    position += file;
+    position += rank;
+
+    return position;
+}
+
+void printMove(const Move& move) {
+    for (int i = 0; i < static_cast<int>(move.rows.size()); i++) {
+        std::cout << positionToText(move.rows[i], move.cols[i]);
+
+        if (i < static_cast<int>(move.rows.size()) - 1) {
+            std::cout << " -> ";
+        }
+    }
+
+    std::cout << "\n";
+}
 
 int main() {
     Board board;
+    AI ai('b', 3);
+
     char currentPlayer = 'w';
     std::string forcedFrom = "";
 
@@ -30,24 +58,20 @@ int main() {
             break;
         }
 
-        if (currentPlayer == 'w') {
-            std::cout << "Tura bialych.\n";
-        } else {
-            std::cout << "Tura czarnych.\n";
-        }
-
-        if (forcedFrom != "") {
-            std::cout << "###############################\n";
-            std::cout << "Musisz kontynuowac bicie pionkiem z pola "
-                      << forcedFrom << ".\n";
-            std::cout << "###############################\n\n";
-        } else if (board.hasAnyCapture(currentPlayer)) {
-            std::cout << "###############################\n";
-            std::cout << "Dostepne jest bicie.\n";
-            std::cout << "###############################\n\n";
-        }
-
         std::vector<Move> legalMoves = board.generateMoves(currentPlayer);
+
+        if (legalMoves.empty()) {
+            std::cout << "******************************\n";
+
+            if (currentPlayer == 'w') {
+                std::cout << "       Biale nie maja ruchu. Czarne wygraly.\n";
+            } else {
+                std::cout << "       Czarne nie maja ruchu. Biale wygraly.\n";
+            }
+
+            std::cout << "******************************\n\n";
+            break;
+        }
 
         int captureCount = 0;
         int longestCaptureSteps = 0;
@@ -76,6 +100,48 @@ int main() {
         std::cout << "Ocena dla bialych: " << board.evaluate('w') << "\n";
         std::cout << "Ocena dla czarnych: " << board.evaluate('b') << "\n";
         std::cout << "-------------------------------\n\n";
+
+        if (currentPlayer == 'b') {
+            std::cout << "Tura komputera, czarne mysla...\n";
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(700));
+
+            Move aiMove = ai.findBestMove(board);
+
+            if (aiMove.rows.size() < 2) {
+                std::cout << "Komputer nie znalazl ruchu.\n";
+                break;
+            }
+
+            std::cout << "Komputer wybral ruch: ";
+            printMove(aiMove);
+
+            std::cout << "Komputer przeanalizowal stanow: " <<ai.getVisitedNodes() << "\n";
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(700));
+
+            board.applyMove(aiMove);
+
+            std::cout << "Komputer wykonal ruch.\n\n";
+
+            currentPlayer = 'w';
+            forcedFrom = "";
+
+            continue;
+        }
+
+        std::cout << "Tura bialych.\n";
+
+        if (forcedFrom != "") {
+            std::cout << "###############################\n";
+            std::cout << "Musisz kontynuowac bicie pionkiem z pola "
+                      << forcedFrom << ".\n";
+            std::cout << "###############################\n\n";
+        } else if (board.hasAnyCapture(currentPlayer)) {
+            std::cout << "###############################\n";
+            std::cout << "      Dostepne jest bicie.\n";
+            std::cout << "###############################\n\n";
+        }
 
         std::cout << "Podaj ruch, np. c3 d4 albo q zeby wyjsc: ";
         std::cin >> from;
@@ -121,16 +187,11 @@ int main() {
                 std::cout << "###############################\n\n";
             } else {
                 forcedFrom = "";
-
-                if (currentPlayer == 'w') {
-                    currentPlayer = 'b';
-                } else {
-                    currentPlayer = 'w';
-                }
+                currentPlayer = 'b';
             }
         } else {
             std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
-            std::cout << "Niepoprawny ruch.\n";
+            std::cout << "         Niepoprawny ruch.\n";
             std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n\n";
         }
     }
