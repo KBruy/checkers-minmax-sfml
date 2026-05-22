@@ -11,6 +11,7 @@ add_executable(PAACheckersMinMax
     src/main.cpp
     src/Board.cpp
     src/Move.cpp
+    src/AI.cpp
 )
 
 target_link_libraries(PAACheckersMinMax

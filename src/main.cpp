@@ -1,5 +1,6 @@
 #include "Board.h"
 #include "Move.h"
+#include "AI.h"
 
 #include <iostream>
 #include <string>
@@ -7,6 +8,7 @@
 
 int main() {
     Board board;
+    AI ai('b', 3);
     char currentPlayer = 'w';
     std::string forcedFrom = "";
 
