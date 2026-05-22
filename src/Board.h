@@ -63,6 +63,8 @@ public:
 
     //ocena planszy
     int evaluate(char player) const;
+
+    char getPiece(int row, int col) const; // metoda potrzebna do rysowania planszy w sfml
 };
 
 #endif

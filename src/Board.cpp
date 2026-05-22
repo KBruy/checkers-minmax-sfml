@@ -740,3 +740,12 @@ void Board::generateKingCaptureSequences(Board board, int row, int col, char pla
         moves.push_back(currentMove);
     }
 }
+
+
+char Board::getPiece(int row, int col) const {
+    if (row < 0 || row >= 8 || col < 0 || col >= 8) {
+        return '.';
+    }
+
+    return fields[row][col];
+}
