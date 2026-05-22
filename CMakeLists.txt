@@ -9,6 +9,8 @@ find_package(SFML 3 COMPONENTS Graphics Window System REQUIRED)
 
 add_executable(PAACheckersMinMax
     src/main.cpp
+    src/ConsoleGame.cpp
+    src/SfmlGame.cpp
     src/Board.cpp
     src/Move.cpp
     src/AI.cpp
