@@ -5,6 +5,7 @@
 AI::AI(char aiPlayer, int maxDepth) {
     this->aiPlayer = aiPlayer;
     this->maxDepth = maxDepth;
+    visitedNodes = 0;
 
     if (aiPlayer == 'w') {
         humanPlayer = 'b';
@@ -22,6 +23,8 @@ char AI::getOpponent(char player) const {
 }
 
 Move AI::findBestMove(Board board) {
+    visitedNodes = 0;
+
     std::vector<Move> moves = board.generateMoves(aiPlayer);
 
     if (moves.empty()) {
@@ -47,6 +50,7 @@ Move AI::findBestMove(Board board) {
 }
 
 int AI::minmax(Board board, int depth, char currentPlayer) {
+    visitedNodes++;
     if (depth == 0 || !board.hasPieces('w') || !board.hasPieces('b')) {
         return board.evaluate(aiPlayer);
     }
@@ -88,4 +92,8 @@ int AI::minmax(Board board, int depth, char currentPlayer) {
 
         return bestScore;
     }
+}
+
+int AI::getVisitedNodes() const {
+    return visitedNodes;
 }

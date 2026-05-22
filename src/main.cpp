@@ -116,6 +116,8 @@ int main() {
             std::cout << "Komputer wybral ruch: ";
             printMove(aiMove);
 
+            std::cout << "Komputer przeanalizowal stanow: " <<ai.getVisitedNodes() << "\n";
+
             std::this_thread::sleep_for(std::chrono::milliseconds(700));
 
             board.applyMove(aiMove);

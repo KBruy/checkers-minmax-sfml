@@ -13,10 +13,13 @@ class AI {
         int minmax(Board board, int depth, char currentPlayer);
         char getOpponent(char player) const;
 
+        int visitedNodes; //metoda wyswietlająca ilość przeanalizowyanych możliwosći
+
     public:
         AI(char aiPlayer, int maxDepth);
 
         Move findBestMove(Board board);
+        int getVisitedNodes() const; 
 };
 
 #endif
