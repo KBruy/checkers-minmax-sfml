@@ -20,7 +20,27 @@ void drawText(sf::RenderWindow& window, const sf::Font& font, const std::string&
     window.draw(text);
 }
 
-void drawBoard(sf::RenderWindow& window, const Board& board) {
+bool mouseToBoardPosition(int mouseX, int mouseY, int& row, int& col) {
+    const float panelWidth = 260.0f;
+    const float boardLeft = panelWidth + 50.0f;
+    const float boardTop = 80.0f;
+    const float squareSize = 80.0f;
+
+    if (mouseX < boardLeft || mouseY < boardTop) {
+        return false;
+    }
+
+    col = static_cast<int>((mouseX - boardLeft) / squareSize);
+    row = static_cast<int>((mouseY - boardTop) / squareSize);
+
+    if (row < 0 || row >= 8 || col < 0 || col >= 8) {
+        return false;
+    }
+
+    return true;
+}
+
+void drawBoard(sf::RenderWindow& window, const Board& board, int selectedRow, int selectedCol) {
     const float panelWidth = 260.0f;
     const float boardLeft = panelWidth + 50.0f;
     const float boardTop = 80.0f;
@@ -43,6 +63,7 @@ void drawBoard(sf::RenderWindow& window, const Board& board) {
             }
 
             window.draw(square);
+
 
             char piece = board.getPiece(row, col);
 
@@ -71,6 +92,20 @@ void drawBoard(sf::RenderWindow& window, const Board& board) {
                 }
             }
         }
+    }
+
+        if (selectedRow >= 0 && selectedCol >= 0) {
+        float x = boardLeft + selectedCol * squareSize;
+        float y = boardTop + selectedRow * squareSize;
+
+        sf::RectangleShape selection;
+        selection.setSize({squareSize, squareSize});
+        selection.setPosition({x, y});
+        selection.setFillColor(sf::Color(0, 0, 0, 0));
+        selection.setOutlineColor(sf::Color(255, 220, 0));
+        selection.setOutlineThickness(5.0f);
+
+        window.draw(selection);
     }
 }
 
@@ -145,6 +180,9 @@ void runSfmlGame() {
     Board board;
     char currentPlayer = 'w';
 
+    int selectedRow = -1;
+    int selectedCol = -1;
+
     sf::Font font;
     bool fontLoaded = loadFont(font);
 
@@ -160,14 +198,29 @@ void runSfmlGame() {
             if (event->is<sf::Event::Closed>()) {
                 window.close();
             }
+
+            if (const auto* mouseButton = event-> getIf<sf::Event::MouseButtonPressed>()) {
+                if (mouseButton->button == sf::Mouse::Button::Left) {
+                    int row;
+                    int col;
+
+                    if (mouseToBoardPosition(mouseButton->position.x, mouseButton->position.y,row,col)) {
+                        char piece = board.getPiece(row, col);
+
+                        if (piece == 'w' || piece == 'W') {
+                            selectedRow = row;
+                            selectedCol = col;
+                        }
+                    }
+                }
+            }
         }
 
         window.clear(sf::Color(40,40,40));
 
         drawSidePanel(window, board, currentPlayer, font, fontLoaded);
-        drawBoard(window, board);
+        drawBoard(window, board, selectedRow, selectedCol);
 
         window.display();
     }
 }
-
