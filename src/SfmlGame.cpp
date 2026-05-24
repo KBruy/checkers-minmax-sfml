@@ -1,22 +1,30 @@
 #include "SfmlGame.h"
+#include "AI.h"
 #include "Board.h"
 #include "Move.h"
 
 #include <SFML/Graphics.hpp>
-#include <optional>
 
-#include <string>
-#include <vector>
+#include <chrono>
 #include <iostream>
+#include <optional>
+#include <string>
+#include <thread>
+#include <vector>
 
-bool loadFont(sf::Font& font){
+bool loadFont(sf::Font& font) {
     return font.openFromFile("assets/fonts/DejaVuSans.ttf");
 }
 
-void drawText(sf::RenderWindow& window, const sf::Font& font, const std::string& textValue, float x, float y, unsigned int size){
+void drawText(sf::RenderWindow& window,
+              const sf::Font& font,
+              const std::string& textValue,
+              float x,
+              float y,
+              unsigned int size) {
     sf::Text text(font, textValue, size);
-    text.setPosition({x,y});
-    text.setFillColor(sf::Color(230,230,230));
+    text.setPosition({x, y});
+    text.setFillColor(sf::Color(230, 230, 230));
     window.draw(text);
 }
 
@@ -40,7 +48,22 @@ bool mouseToBoardPosition(int mouseX, int mouseY, int& row, int& col) {
     return true;
 }
 
-void drawBoard(sf::RenderWindow& window, const Board& board, int selectedRow, int selectedCol) {
+std::string positionToText(int row, int col) {
+    char file = 'a' + col;
+    char rank = '8' - row;
+
+    std::string position = "";
+    position += file;
+    position += rank;
+
+    return position;
+}
+
+void drawBoard(sf::RenderWindow& window,
+               const Board& board,
+               int selectedRow,
+               int selectedCol,
+               const Move& lastAiMove) {
     const float panelWidth = 260.0f;
     const float boardLeft = panelWidth + 50.0f;
     const float boardTop = 80.0f;
@@ -63,7 +86,6 @@ void drawBoard(sf::RenderWindow& window, const Board& board, int selectedRow, in
             }
 
             window.draw(square);
-
 
             char piece = board.getPiece(row, col);
 
@@ -94,7 +116,26 @@ void drawBoard(sf::RenderWindow& window, const Board& board, int selectedRow, in
         }
     }
 
-        if (selectedRow >= 0 && selectedCol >= 0) {
+    if (lastAiMove.rows.size() >= 2) {
+        for (int i = 0; i < static_cast<int>(lastAiMove.rows.size()); i++) {
+            int row = lastAiMove.rows[i];
+            int col = lastAiMove.cols[i];
+
+            float x = boardLeft + col * squareSize;
+            float y = boardTop + row * squareSize;
+
+            sf::RectangleShape aiSelection;
+            aiSelection.setSize({squareSize - 8.0f, squareSize - 8.0f});
+            aiSelection.setPosition({x + 4.0f, y + 4.0f});
+            aiSelection.setFillColor(sf::Color(0, 0, 0, 0));
+            aiSelection.setOutlineColor(sf::Color(60, 160, 255));
+            aiSelection.setOutlineThickness(4.0f);
+
+            window.draw(aiSelection);
+        }
+    }
+
+    if (selectedRow >= 0 && selectedCol >= 0) {
         float x = boardLeft + selectedCol * squareSize;
         float y = boardTop + selectedRow * squareSize;
 
@@ -109,17 +150,22 @@ void drawBoard(sf::RenderWindow& window, const Board& board, int selectedRow, in
     }
 }
 
-void drawSidePanel(sf:: RenderWindow& window, const Board& board, char currentPlayer, const sf::Font& font, bool fontLoaded) {
+void drawSidePanel(sf::RenderWindow& window,
+                   const Board& board,
+                   char currentPlayer,
+                   const std::string& statusMessage,
+                   const sf::Font& font,
+                   bool fontLoaded) {
     sf::RectangleShape panel;
     panel.setSize({260.0f, 800.0f});
     panel.setPosition({0.0f, 0.0f});
-    panel.setFillColor(sf::Color(35,35,35));
+    panel.setFillColor(sf::Color(35, 35, 35));
     window.draw(panel);
 
     sf::RectangleShape line;
     line.setSize({2.0f, 800.0f});
     line.setPosition({260.0f, 0.0f});
-    line.setFillColor(sf::Color(90,90,90));
+    line.setFillColor(sf::Color(90, 90, 90));
     window.draw(line);
 
     if (!fontLoaded) {
@@ -131,11 +177,11 @@ void drawSidePanel(sf:: RenderWindow& window, const Board& board, char currentPl
     int captureCount = 0;
     int longestCaptureSteps = 0;
 
-    for (int i =0; i<static_cast<int>(legalMoves.size()); i++) {
+    for (int i = 0; i < static_cast<int>(legalMoves.size()); i++) {
         if (legalMoves[i].isCapture) {
             captureCount++;
 
-            int steps = static_cast<int>(legalMoves[i].rows.size()) -1;
+            int steps = static_cast<int>(legalMoves[i].rows.size()) - 1;
 
             if (steps > longestCaptureSteps) {
                 longestCaptureSteps = steps;
@@ -156,40 +202,75 @@ void drawSidePanel(sf:: RenderWindow& window, const Board& board, char currentPl
 
     drawText(window, font, playerText, 30.0f, 140.0f, 20);
 
-    drawText(window, font, "Legalne ruchy: " + std::to_string(legalMoves.size()),30.0f,190.0f,18);
+    drawText(window, font,
+             "Legalne ruchy: " + std::to_string(legalMoves.size()),
+             30.0f,
+             190.0f,
+             18);
 
-    drawText(window, font,"Bicia: " + std::to_string(captureCount), 30.0f, 220.0f, 18);
+    drawText(window, font,
+             "Bicia: " + std::to_string(captureCount),
+             30.0f,
+             220.0f,
+             18);
 
     if (captureCount > 0) {
-        drawText(window, font, "Najdluzsze bicie: " + std::to_string(longestCaptureSteps), 30.0f, 250.0f, 18);
-
+        drawText(window, font,
+                 "Najdluzsze bicie: " + std::to_string(longestCaptureSteps),
+                 30.0f,
+                 250.0f,
+                 18);
     }
 
-    drawText(window, font, "Ocena bialych: " + std::to_string(board.evaluate('w')), 30.0f, 310.0f, 18);
+    drawText(window, font,
+             "Ocena bialych: " + std::to_string(board.evaluate('w')),
+             30.0f,
+             310.0f,
+             18);
 
-    drawText(window, font, "Ocena czarnych: " + std::to_string(board.evaluate('b')),30.0f, 340.0f, 18);
+    drawText(window, font,
+             "Ocena czarnych: " + std::to_string(board.evaluate('b')),
+             30.0f,
+             340.0f,
+             18);
 
     if (board.hasAnyCapture(currentPlayer)) {
-        drawText(window, font, "Dostepne bicie!", 30.0f, 410.0f, 20);
+        drawText(window, font,
+                 "Dostepne bicie!",
+                 30.0f,
+                 410.0f,
+                 20);
     }
 
+    drawText(window, font, "Status:", 30.0f, 460.0f, 18);
+    drawText(window, font, statusMessage, 30.0f, 490.0f, 15);
 
+    drawText(window, font, "Zolta ramka: wybor", 30.0f, 660.0f, 15);
+    drawText(window, font, "Niebieska: ruch AI", 30.0f, 685.0f, 15);
 }
 
 void runSfmlGame() {
     Board board;
+    AI ai('b', 1);
+
     char currentPlayer = 'w';
 
     int selectedRow = -1;
     int selectedCol = -1;
 
+    Move lastAiMove;
+
+    std::string statusMessage = "Kliknij bialy pionek.";
+
+    bool gameOver = false;
+    sf::Clock gameOverClock;
+
     sf::Font font;
     bool fontLoaded = loadFont(font);
 
     if (!fontLoaded) {
-    std::cout << "Nie udalo sie wczytac fontu assets/fonts/DejaVuSans.ttf\n";
-
-}
+        std::cout << "Nie udalo sie wczytac fontu assets/fonts/DejaVuSans.ttf\n";
+    }
 
     sf::RenderWindow window(sf::VideoMode({1000, 800}), "Checkers - Min-Max");
 
@@ -199,27 +280,142 @@ void runSfmlGame() {
                 window.close();
             }
 
-            if (const auto* mouseButton = event-> getIf<sf::Event::MouseButtonPressed>()) {
-                if (mouseButton->button == sf::Mouse::Button::Left) {
+            if (const auto* mouseButton = event->getIf<sf::Event::MouseButtonPressed>()) {
+                if (mouseButton->button == sf::Mouse::Button::Left &&
+                    currentPlayer == 'w' &&
+                    !gameOver) {
                     int row;
                     int col;
 
-                    if (mouseToBoardPosition(mouseButton->position.x, mouseButton->position.y,row,col)) {
+                    if (mouseToBoardPosition(mouseButton->position.x,
+                                             mouseButton->position.y,
+                                             row,
+                                             col)) {
                         char piece = board.getPiece(row, col);
 
-                        if (piece == 'w' || piece == 'W') {
-                            selectedRow = row;
-                            selectedCol = col;
+                        if (selectedRow == -1 && selectedCol == -1) {
+                            if (piece == 'w' || piece == 'W') {
+                                selectedRow = row;
+                                selectedCol = col;
+                                statusMessage = "Wybrano pole: " + positionToText(row, col);
+                            } else {
+                                statusMessage = "Wybierz bialy pionek.";
+                            }
+                        } else {
+                            if (piece == 'w' || piece == 'W') {
+                                selectedRow = row;
+                                selectedCol = col;
+                                statusMessage = "Zmieniono wybor na: " + positionToText(row, col);
+                            } else {
+                                std::string from = positionToText(selectedRow, selectedCol);
+                                std::string to = positionToText(row, col);
+
+                                bool mustCapture = board.hasAnyCapture(currentPlayer);
+                                bool captureMove = board.isCaptureMove(from, to, currentPlayer);
+
+                                if (mustCapture && !captureMove) {
+                                    statusMessage = "Musisz wykonac bicie.";
+                                    selectedRow = -1;
+                                    selectedCol = -1;
+                                } else if (board.movePiece(from, to, currentPlayer)) {
+                                    lastAiMove = Move();
+
+                                    statusMessage = "Ruch: " + from + " -> " + to;
+
+                                    if (captureMove && board.canCaptureFromPosition(to, currentPlayer)) {
+                                        selectedRow = row;
+                                        selectedCol = col;
+                                        statusMessage = "Kontynuuj bicie z pola " + to;
+                                    } else {
+                                        selectedRow = -1;
+                                        selectedCol = -1;
+                                        currentPlayer = 'b';
+                                    }
+                                } else {
+                                    statusMessage = "Niepoprawny ruch.";
+                                    selectedRow = -1;
+                                    selectedCol = -1;
+                                }
+                            }
                         }
                     }
                 }
             }
         }
 
-        window.clear(sf::Color(40,40,40));
+        if (!gameOver) {
+            std::vector<Move> currentMoves = board.generateMoves(currentPlayer);
 
-        drawSidePanel(window, board, currentPlayer, font, fontLoaded);
-        drawBoard(window, board, selectedRow, selectedCol);
+            if (!board.hasPieces('w')) {
+                gameOver = true;
+                gameOverClock.restart();
+                statusMessage = "Koniec gry. Czarne wygraly. Reset za 10 s.";
+                selectedRow = -1;
+                selectedCol = -1;
+            } else if (!board.hasPieces('b')) {
+                gameOver = true;
+                gameOverClock.restart();
+                statusMessage = "Koniec gry. Biale wygraly. Reset za 10 s.";
+                selectedRow = -1;
+                selectedCol = -1;
+            } else if (currentMoves.empty()) {
+                gameOver = true;
+                gameOverClock.restart();
+                selectedRow = -1;
+                selectedCol = -1;
+
+                if (currentPlayer == 'w') {
+                    statusMessage = "Biale nie maja ruchu. Czarne wygraly. Reset za 10 s.";
+                } else {
+                    statusMessage = "Czarne nie maja ruchu. Biale wygraly. Reset za 10 s.";
+                }
+            }
+        }
+
+        if (gameOver) {
+            int elapsedSeconds = static_cast<int>(gameOverClock.getElapsedTime().asSeconds());
+            int secondsLeft = 10 - elapsedSeconds;
+
+            if (secondsLeft <= 0) {
+                board = Board();
+                ai = AI('b', 3);
+
+                currentPlayer = 'w';
+
+                selectedRow = -1;
+                selectedCol = -1;
+
+                lastAiMove = Move();
+
+                gameOver = false;
+                statusMessage = "Nowa gra. Kliknij bialy pionek.";
+            }
+        }
+
+        if (currentPlayer == 'b' && !gameOver) {
+            statusMessage = "Komputer mysli...";
+
+            Move aiMove = ai.findBestMove(board);
+
+            if (aiMove.rows.size() >= 2) {
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+                board.applyMove(aiMove);
+                lastAiMove = aiMove;
+
+                statusMessage = "Komputer wykonal ruch.";
+                currentPlayer = 'w';
+            } else {
+                statusMessage = "Komputer nie ma ruchu.";
+                gameOver = true;
+                gameOverClock.restart();
+            }
+        }
+
+        window.clear(sf::Color(40, 40, 40));
+
+        drawSidePanel(window, board, currentPlayer, statusMessage, font, fontLoaded);
+        drawBoard(window, board, selectedRow, selectedCol, lastAiMove);
 
         window.display();
     }
