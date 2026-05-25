@@ -4,6 +4,7 @@
 #include <vector>
 
 struct Move {
+    // Kolejne pola ruchu, przy biciu moze byc ich wiecej niz dwa
     std::vector<int> rows;
     std::vector<int> cols;
     bool isCapture;

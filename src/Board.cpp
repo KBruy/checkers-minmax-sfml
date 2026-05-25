@@ -3,12 +3,14 @@
 #include <iostream>
 
 Board::Board() {
+    // na start cala plansza jest pusta.
     for (int row = 0; row < 8; row++) {
         for (int col = 0; col < 8; col++) {
             fields[row][col] = '.';
         }
     }
 
+    // czarne pionki  na polach u gory 
     for (int row = 0; row < 3; row++) {
         for (int col = 0; col < 8; col++) {
             if ((row + col) % 2 == 1) {
@@ -17,6 +19,7 @@ Board::Board() {
         }
     }
 
+    // biale pionki stoja na ciemnych polach na dole
     for (int row = 5; row < 8; row++) {
         for (int col = 0; col < 8; col++) {
             if ((row + col) % 2 == 1) {
@@ -43,6 +46,7 @@ void Board::print() const {
 }
 
 bool Board::parsePosition(const std::string& position, int& row, int& col) const {
+    // Zamiana zapisu typu "c3" na indeksy tablicy.
     if (position.length() != 2) {
         return false;
     }
@@ -95,6 +99,7 @@ bool Board::movePiece(const std::string& from, const std::string& to, char playe
     int rowDiff = toRow - fromRow;
     int colDiff = toCol - fromCol;
 
+    // liczymy wartosc bezwzgledna 
     int absRowDiff = rowDiff;
     int absColDiff = colDiff;
 
@@ -218,6 +223,7 @@ void Board::promoteIfNeeded(int row, int col) {
 }
 
 bool Board::isPathClear(int fromRow, int fromCol, int toRow, int toCol) const {
+    // Sprawdza, czy damka ma wolna przekatna.
     int rowStep = (toRow > fromRow) ? 1 : -1;
     int colStep = (toCol > fromCol) ? 1 : -1;
 
@@ -241,6 +247,7 @@ bool Board::findCapturePieceOnPath(int fromRow, int fromCol,
                                    char player,
                                    int& capturedRow,
                                    int& capturedCol) const {
+    // Damka moze zbic dokladnie jeden pionek na swojej drodze, jezeli jest wielokrotne bicie, zostanie zrealizowane w kolejnym odswiezeniu
     int rowStep = (toRow > fromRow) ? 1 : -1;
     int colStep = (toCol > fromCol) ? 1 : -1;
 
@@ -360,6 +367,7 @@ bool Board::canKingCaptureFrom(int row, int col, char player) const {
 }
 
 bool Board::hasAnyCapture(char player) const {
+    // bicie ma pierwszenstwo przed zwyklym ruchem
     for (int row = 0; row < 8; row++) {
         for (int col = 0; col < 8; col++) {
             char piece = fields[row][col];
@@ -421,7 +429,7 @@ bool Board::isCaptureMove(const std::string& from, const std::string& to, char p
         absColDiff = -absColDiff;
     }
 
-    // Bicie zwyklego pionka
+    // bicie zwyklego pionka
     if (!isKing(piece)) {
         if (absRowDiff == 2 && absColDiff == 2) {
             int middleRow = (fromRow + toRow) / 2;
@@ -433,7 +441,7 @@ bool Board::isCaptureMove(const std::string& from, const std::string& to, char p
         return false;
     }
 
-    // Bicie damki z odleglosci
+    // bicie damki z odleglosci
     if (absRowDiff == absColDiff && absRowDiff > 0) {
         int capturedRow = -1;
         int capturedCol = -1;
@@ -480,6 +488,7 @@ bool Board::hasPieces(char player) const {
 
 void Board::generateManMoves(int row, int col, char player, bool onlyCaptures, std::vector<Move>& moves) const {
     if (onlyCaptures) {
+        // przy biciu szukamy calej sekwencji, nie tylko jednego skoku.
         Move startMove;
         startMove.rows.push_back(row);
         startMove.cols.push_back(col);
@@ -505,6 +514,7 @@ void Board::generateManMoves(int row, int col, char player, bool onlyCaptures, s
 
 void Board::generateKingMoves(int row, int col, char player, bool onlyCaptures, std::vector<Move>& moves) const {
     if (onlyCaptures) {
+        // damka tez moze miec kilka bic pod rzad.
         Move startMove;
         startMove.rows.push_back(row);
         startMove.cols.push_back(col);
@@ -538,6 +548,7 @@ void Board::generateKingMoves(int row, int col, char player, bool onlyCaptures, 
 //metoda pod AI, zakladamy ze Move pochodzi z generateMoves(player) a wiec jest juz legalny
 std::vector<Move> Board::generateMoves(char player) const {
     std::vector<Move> moves;
+    // jesli jest bicie, generujemy tylko bicia.
     bool onlyCaptures = hasAnyCapture(player);
 
     for (int row = 0; row < 8; row++) {
@@ -564,6 +575,7 @@ void Board::applyMove(const Move& move) {
         return;
     }
 
+    // Move moze zawierac kilka krokow przy wielokrotnym biciu.
     for (int i = 0; i < static_cast<int>(move.rows.size()) - 1; i++) {
         int fromRow = move.rows[i];
         int fromCol = move.cols[i];
@@ -605,6 +617,7 @@ void Board::applyMove(const Move& move) {
 }
 
 int Board::evaluate(char player) const {
+    // Prosta ocena: pionek 100 punktow, damka 300 punktow.
     int whiteScore = 0;
     int blackScore = 0;
 
@@ -665,6 +678,7 @@ void Board::generateManCaptureSequences(Board board, int row, int col, char play
 
         Board nextBoard = board;
 
+        // Robimy kopie planszy, zeby sprawdzic dalsze bicia.
         char piece = nextBoard.fields[row][col];
         nextBoard.fields[targetRow][targetCol] = piece;
         nextBoard.fields[row][col] = '.';
@@ -705,6 +719,7 @@ void Board::generateKingCaptureSequences(Board board, int row, int col, char pla
 
             if (current == '.') {
                 if (foundOpponent) {
+                    // Po znalezieniu przeciwnika puste pola sa mozliwym ladowaniem.
                     Board nextBoard = board;
 
                     char piece = nextBoard.fields[row][col];
@@ -739,4 +754,13 @@ void Board::generateKingCaptureSequences(Board board, int row, int col, char pla
     if (!foundNextCapture && currentMove.rows.size() > 1) {
         moves.push_back(currentMove);
     }
+}
+
+
+char Board::getPiece(int row, int col) const {
+    if (row < 0 || row >= 8 || col < 0 || col >= 8) {
+        return '.';
+    }
+
+    return fields[row][col];
 }
