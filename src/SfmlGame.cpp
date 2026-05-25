@@ -29,6 +29,7 @@ void drawText(sf::RenderWindow& window,
 }
 
 bool mouseToBoardPosition(int mouseX, int mouseY, int& row, int& col) {
+    // przelicza klikniecie myszy na pole planszy
     const float panelWidth = 260.0f;
     const float boardLeft = panelWidth + 50.0f;
     const float boardTop = 80.0f;
@@ -49,6 +50,7 @@ bool mouseToBoardPosition(int mouseX, int mouseY, int& row, int& col) {
 }
 
 std::string positionToText(int row, int col) {
+    // zamiana indeksow tablicy na zapis typu "a1".
     char file = 'a' + col;
     char rank = '8' - row;
 
@@ -90,6 +92,7 @@ void drawBoard(sf::RenderWindow& window,
             char piece = board.getPiece(row, col);
 
             if (piece != '.') {
+                // Pionki rysujemy jako kola na polach.
                 sf::CircleShape circle;
                 circle.setRadius(30.0f);
                 circle.setPosition({x + 10.0f, y + 10.0f});
@@ -106,6 +109,7 @@ void drawBoard(sf::RenderWindow& window,
                 window.draw(circle);
 
                 if (piece == 'W' || piece == 'B') {
+                    // Male zlote kolko oznacza damke.
                     sf::CircleShape kingMark;
                     kingMark.setRadius(12.0f);
                     kingMark.setPosition({x + 28.0f, y + 28.0f});
@@ -117,6 +121,7 @@ void drawBoard(sf::RenderWindow& window,
     }
 
     if (lastAiMove.rows.size() >= 2) {
+        // Niebieska ramka pokazujaca ruch ai
         for (int i = 0; i < static_cast<int>(lastAiMove.rows.size()); i++) {
             int row = lastAiMove.rows[i];
             int col = lastAiMove.cols[i];
@@ -136,6 +141,7 @@ void drawBoard(sf::RenderWindow& window,
     }
 
     if (selectedRow >= 0 && selectedCol >= 0) {
+        // Zolta ramka pokazuje wybrany pionek gracza
         float x = boardLeft + selectedCol * squareSize;
         float y = boardTop + selectedRow * squareSize;
 
@@ -154,6 +160,7 @@ void drawSidePanel(sf::RenderWindow& window,
                    const Board& board,
                    char currentPlayer,
                    const std::string& statusMessage,
+                   int lastVisitedNodes,
                    const sf::Font& font,
                    bool fontLoaded) {
     sf::RectangleShape panel;
@@ -177,6 +184,7 @@ void drawSidePanel(sf::RenderWindow& window,
     int captureCount = 0;
     int longestCaptureSteps = 0;
 
+    // panel pokazuje proste statystyki aktualnej pozycji
     for (int i = 0; i < static_cast<int>(legalMoves.size()); i++) {
         if (legalMoves[i].isCapture) {
             captureCount++;
@@ -234,6 +242,12 @@ void drawSidePanel(sf::RenderWindow& window,
              340.0f,
              18);
 
+    drawText(window, font,
+             "Stany AI: " + std::to_string(lastVisitedNodes),
+             30.0f,
+             375.0f,
+             18);
+
     if (board.hasAnyCapture(currentPlayer)) {
         drawText(window, font,
                  "Dostepne bicie!",
@@ -250,8 +264,10 @@ void drawSidePanel(sf::RenderWindow& window,
 }
 
 void runSfmlGame() {
+    // glebokosc min-max
+    const int aiDepth = 3;
     Board board;
-    AI ai('b', 1);
+    AI ai('b', aiDepth);
 
     char currentPlayer = 'w';
 
@@ -259,6 +275,7 @@ void runSfmlGame() {
     int selectedCol = -1;
 
     Move lastAiMove;
+    int lastVisitedNodes = 0;
 
     std::string statusMessage = "Kliknij bialy pionek.";
 
@@ -294,6 +311,7 @@ void runSfmlGame() {
                         char piece = board.getPiece(row, col);
 
                         if (selectedRow == -1 && selectedCol == -1) {
+                            // Pierwsze klikniecie wybiera pionek
                             if (piece == 'w' || piece == 'W') {
                                 selectedRow = row;
                                 selectedCol = col;
@@ -303,6 +321,7 @@ void runSfmlGame() {
                             }
                         } else {
                             if (piece == 'w' || piece == 'W') {
+                                // Klikniecie innego bialego pionka zmienia wybor
                                 selectedRow = row;
                                 selectedCol = col;
                                 statusMessage = "Zmieniono wybor na: " + positionToText(row, col);
@@ -313,16 +332,19 @@ void runSfmlGame() {
                                 bool mustCapture = board.hasAnyCapture(currentPlayer);
                                 bool captureMove = board.isCaptureMove(from, to, currentPlayer);
 
+                                // Drugie klikniecie probuje wykonac ruch
                                 if (mustCapture && !captureMove) {
                                     statusMessage = "Musisz wykonac bicie.";
                                     selectedRow = -1;
                                     selectedCol = -1;
                                 } else if (board.movePiece(from, to, currentPlayer)) {
                                     lastAiMove = Move();
+                                    lastVisitedNodes = 0;
 
                                     statusMessage = "Ruch: " + from + " -> " + to;
 
                                     if (captureMove && board.canCaptureFromPosition(to, currentPlayer)) {
+                                        // Po biciu zostaje zaznaczony ten sam pionek
                                         selectedRow = row;
                                         selectedCol = col;
                                         statusMessage = "Kontynuuj bicie z pola " + to;
@@ -344,6 +366,7 @@ void runSfmlGame() {
         }
 
         if (!gameOver) {
+            // Co klatke sprawdzamy, czy gra juz sie skonczyla
             std::vector<Move> currentMoves = board.generateMoves(currentPlayer);
 
             if (!board.hasPieces('w')) {
@@ -373,12 +396,13 @@ void runSfmlGame() {
         }
 
         if (gameOver) {
+            // Po koncu gry plansza sama resetuje sie po kilku sekundach
             int elapsedSeconds = static_cast<int>(gameOverClock.getElapsedTime().asSeconds());
             int secondsLeft = 10 - elapsedSeconds;
 
             if (secondsLeft <= 0) {
                 board = Board();
-                ai = AI('b', 3);
+                ai = AI('b', aiDepth);
 
                 currentPlayer = 'w';
 
@@ -386,6 +410,7 @@ void runSfmlGame() {
                 selectedCol = -1;
 
                 lastAiMove = Move();
+                lastVisitedNodes = 0;
 
                 gameOver = false;
                 statusMessage = "Nowa gra. Kliknij bialy pionek.";
@@ -395,7 +420,9 @@ void runSfmlGame() {
         if (currentPlayer == 'b' && !gameOver) {
             statusMessage = "Komputer mysli...";
 
+            // Ruch komputera jest liczony automatycznie przez AI
             Move aiMove = ai.findBestMove(board);
+            lastVisitedNodes = ai.getVisitedNodes();
 
             if (aiMove.rows.size() >= 2) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -414,7 +441,7 @@ void runSfmlGame() {
 
         window.clear(sf::Color(40, 40, 40));
 
-        drawSidePanel(window, board, currentPlayer, statusMessage, font, fontLoaded);
+        drawSidePanel(window, board, currentPlayer, statusMessage, lastVisitedNodes, font, fontLoaded);
         drawBoard(window, board, selectedRow, selectedCol, lastAiMove);
 
         window.display();

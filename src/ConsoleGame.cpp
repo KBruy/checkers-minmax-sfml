@@ -11,6 +11,7 @@
 #include <vector>
 
 std::string positionToTex(int row, int col) {
+    // zamiana indeksow tablicy na zapis szachowy.
     char file = 'a' + col;
     char rank = '8' - row;
 
@@ -23,6 +24,7 @@ std::string positionToTex(int row, int col) {
 }
 
 void printMove(const Move& move) {
+    // Wypisuje tez ruchy zlozone z kilku bic.
     for (int i =0; i < static_cast<int>(move.rows.size()); i++) {
         std::cout << positionToTex(move.rows[i], move.cols[i]);
 
@@ -38,6 +40,7 @@ void runConsoleGame() {
     Board board;
     AI ai('b', 3);
 
+    
     char currentPlayer = 'w';
     std::string forcedFrom = "";
 
@@ -79,6 +82,7 @@ void runConsoleGame() {
         int captureCount = 0;
         int longestCaptureSteps = 0;
 
+        // dane pomocnicze tylko do wyswietlenia w konsoli.
         for (int i = 0; i < static_cast<int>(legalMoves.size()); i++) {
             if (legalMoves[i].isCapture) {
                 captureCount++;
@@ -109,6 +113,7 @@ void runConsoleGame() {
 
             std::this_thread::sleep_for(std::chrono::milliseconds(700));
 
+            // AI wybiera ruch
             Move aiMove = ai.findBestMove(board);
 
             if (aiMove.rows.size() < 2) {
@@ -165,6 +170,7 @@ void runConsoleGame() {
         bool mustCapture = board.hasAnyCapture(currentPlayer);
         bool captureMove = board.isCaptureMove(from, to, currentPlayer);
 
+        
         if (forcedFrom != "" && !captureMove) {
             std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n";
             std::cout << "Musisz kontynuowac bicie.\n";
@@ -183,6 +189,7 @@ void runConsoleGame() {
             std::cout << "Ruch wykonany.\n\n";
 
             if (captureMove && board.canCaptureFromPosition(to, currentPlayer)) {
+                // Po biciu moze byc wymagane kolejne bicie tym samym pionkiem
                 forcedFrom = to;
 
                 std::cout << "###############################\n";

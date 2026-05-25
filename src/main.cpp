@@ -15,6 +15,7 @@ int main() {
     std::cout << "Wybor: ";
     std::cin >> choice;
 
+  //wybranie wersji
     if (choice == 1) {
         runConsoleGame();
     } else if (choice == 2) {
